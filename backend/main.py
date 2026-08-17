@@ -35,7 +35,7 @@ if not LLM_API_KEY:
     raise ValueError("Missing LLM_API_KEY in .env file!")
 
 llm_client = OpenAI(api_key=LLM_API_KEY, base_url="https://api.groq.com/openai/v1")
-MODEL_NAME = "llama-3.1-8b-instant" 
+MODEL_NAME = "openai/gpt-oss-120b" 
 
 # --- DATA MODELS ---
 class BugSubmission(BaseModel):
@@ -202,7 +202,7 @@ async def search_similar_bugs(search: SearchQuery):
         print(f"Backend Error: {e}")
         raise HTTPException(status_code=500, detail=str(e))
     
-    # --- MILESTONE 3: INVESTIGATION AGENTS ---
+# --- MILESTONE 3: INVESTIGATION AGENTS ---
 
 async def run_duplicate_detection_agent(query_vector: list) -> list:
     """Agent 3: Performs semantic similarity search over past bugs."""
@@ -227,23 +227,34 @@ async def run_root_cause_agent(query: str, duplicates: list) -> dict:
     Current Issue: {query}
     Historical Context: {context_text}
     
-    Output a raw JSON object with exactly these keys:
-    - hypothesis (Detailed explanation of what is breaking)
-    - confidence_score (Float between 0.0 and 1.0)
-    - evidence (Array of strings explaining why you believe this, referencing history if applicable)
+    Output a raw JSON object with exactly these keys (no markdown, no backticks):
+    - hypothesis
+    - confidence_score
+    - evidence
     """
     try:
+        print("\n⏳ Sending request to AI...")
         response = await asyncio.to_thread(
             llm_client.chat.completions.create,
             model=MODEL_NAME,
             messages=[{"role": "user", "content": prompt}],
-            temperature=0.2,
-            response_format={"type": "json_object"}
+            temperature=0.2
         )
-        return json.loads(response.choices[0].message.content)
+        
+        raw_text = response.choices[0].message.content
+        print("\n🤖 RAW AI RESPONSE:")
+        print(raw_text)
+        print("===================\n")
+        
+        # Clean up any accidental markdown backticks before reading
+        clean_text = raw_text.replace("```json", "").replace("```", "").strip()
+        
+        return json.loads(clean_text)
+        
     except Exception as e:
+        print(f"\n🛑 ROOT CAUSE CRASHED: {str(e)}\n")
         return {"hypothesis": "Agent failed to generate root cause.", "confidence_score": 0.0, "evidence": []}
-
+    
 async def run_remediation_agent(query: str, root_cause_data: dict) -> dict:
     """Agent 5: Generates specific fix recommendations."""
     prompt = f"""
@@ -284,7 +295,7 @@ async def investigate_bug(search: SearchQuery):
         remediation = await run_remediation_agent(search.query, root_cause)
         
         # 5. Return the Structured Findings Payload
-        return {
+        final_payload = {
             "success": True,
             "structured_findings": {
                 "duplicate_matches": duplicates,
@@ -292,17 +303,33 @@ async def investigate_bug(search: SearchQuery):
                 "remediation_plan": remediation
             }
         }
+        
+        # 👇 ADD THIS PRINT STATEMENT 👇
+        print("\n=== FINAL AI PAYLOAD ===")
+        print(final_payload)
+        print("========================\n")
+        
+        return final_payload
     except Exception as e:
-        print(f"Investigation Error: {e}")
-        raise HTTPException(status_code=500, detail=str(e))
+        # SAFE ERROR LOGGING: This will not crash your server!
+        import traceback
+        print("\n" + "="*50)
+        print(f"🚨 HIDDEN AI ERROR FOUND: {str(e)}")
+        print("="*50)
+        print(traceback.format_exc())
+        
+        # Safely tell the frontend we failed so the UI doesn't break
+        return {
+            "success": False, 
+            "error": f"Agent crashed: {str(e)}"
+        }
     
-    # --- MILESTONE 4: LIVE METRICS ---
+# --- MILESTONE 4: LIVE METRICS ---
 
 @app.get("/api/metrics")
 async def get_live_metrics():
     try:
         # Fetch all historical bugs from your Supabase database
-        # Note: Adjust the table name if yours is named differently (e.g., "documents" or "historical_bugs")
         response = await asyncio.to_thread(
             supabase.table("historical_bugs").select("*").execute
         )
@@ -312,8 +339,6 @@ async def get_live_metrics():
         severity_counts = {"Critical": 0, "High": 0, "Medium": 0, "Low": 0}
         
         for bug in data:
-            # Depending on how you saved it, severity might be in metadata or a direct column
-            # We check both to be safe!
             metadata = bug.get("metadata", {})
             sev = metadata.get("severity") or bug.get("severity") or "Medium"
             if sev in severity_counts:
@@ -327,8 +352,7 @@ async def get_live_metrics():
             {"name": "Low", "value": severity_counts["Low"], "color": "#3b82f6"}        # Blue
         ]
         
-        # For the timeline, we will mock the AI speed trend for the demo to always look impressive
-        # but in a production app, you would calculate timestamp diffs here.
+        # Mock trend data
         trend_data = [
             {"day": "Mon", "time": 4.2},
             {"day": "Tue", "time": 3.8},
@@ -347,8 +371,6 @@ async def get_live_metrics():
         print(f"Metrics Error: {e}")
         raise HTTPException(status_code=500, detail=str(e))
     
-    from pydantic import BaseModel
-
 class LearnRequest(BaseModel):
     query: str
     severity: str
@@ -413,7 +435,7 @@ async def get_defect_patterns():
             if any(word in desc for word in ["memory", "leak", "crash", "slow", "load"]):
                 patterns["Memory/Performance"] += 1
                 
-       # 4. Format the data for our React Recharts component (removed 'if v > 0')
+        # 4. Format the data for our React Recharts component
         chart_data = [{"theme": k, "count": v} for k, v in patterns.items()]
         chart_data = sorted(chart_data, key=lambda x: x["count"], reverse=True)
         
