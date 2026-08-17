@@ -1,88 +1,102 @@
 'use client';
-
-import { 
-  BarChart, Bar, XAxis, YAxis, CartesianGrid, Tooltip, ResponsiveContainer,
-  PieChart, Pie, Cell
-} from 'recharts';
+import { useState, useEffect } from 'react';
+import { PieChart, Pie, Cell, BarChart, Bar, XAxis, YAxis, Tooltip, ResponsiveContainer } from 'recharts';
 
 export default function MetricsDashboard() {
-  // Mock data for the charts (You can wire this to your database later!)
-  const severityData = [
-    { name: 'Critical', value: 12, color: '#ef4444' }, // Red
-    { name: 'High', value: 24, color: '#f97316' },    // Orange
-    { name: 'Medium', value: 45, color: '#eab308' },  // Yellow
-    { name: 'Low', value: 19, color: '#3b82f6' },     // Blue
-  ];
+  const [metrics, setMetrics] = useState<any>(null);
+  const [isLoading, setIsLoading] = useState(true);
 
-  const resolutionData = [
-    { name: 'Mon', time: 4.2 },
-    { name: 'Tue', time: 3.8 },
-    { name: 'Wed', time: 2.5 },
-    { name: 'Thu', time: 1.9 }, // AI introduced here!
-    { name: 'Fri', time: 0.8 },
-  ];
+  useEffect(() => {
+    const fetchMetrics = async () => {
+      try {
+        const res = await fetch('http://localhost:8000/api/metrics');
+        const data = await res.json();
+        if (data.success) {
+          setMetrics(data);
+        }
+      } catch (error) {
+        console.error("Failed to fetch live metrics:", error);
+      } finally {
+        setIsLoading(false);
+      }
+    };
+
+    fetchMetrics();
+    
+    // Optional: Auto-refresh data every 30 seconds for a truly "live" dashboard
+    const interval = setInterval(fetchMetrics, 30000);
+    return () => clearInterval(interval);
+  }, []);
+
+  if (isLoading) {
+    return <div className="w-full text-center text-slate-400 py-10 animate-pulse">Loading Live Database Metrics...</div>;
+  }
 
   return (
-    <div className="w-full max-w-7xl mx-auto p-4 mt-8">
-      <div className="mb-6">
-        <h2 className="text-2xl font-bold text-slate-900 tracking-tight">System Intelligence Metrics</h2>
-        <p className="text-sm text-slate-500 mt-1">Live analytics on defect ingestion and AI resolution performance.</p>
+    <div className="w-full">
+      <div className="mb-8">
+        <h2 className="text-2xl font-bold text-white tracking-tight">System Intelligence Metrics</h2>
+        <p className="text-sm text-slate-400 mt-1">
+          Live analytics monitoring {metrics?.total_ingested || 0} defects across the vector database.
+        </p>
       </div>
 
-      <div className="grid grid-cols-1 md:grid-cols-2 gap-8">
+      <div className="grid grid-cols-1 lg:grid-cols-2 gap-8">
         
-        {/* LEFT CHART: Severity Donut */}
-        <div className="bg-white rounded-2xl shadow-xl p-8 border border-slate-100">
-          <h3 className="text-sm font-bold text-slate-400 uppercase tracking-wider mb-6">Open Defects by Severity</h3>
+        {/* Module 1: Live Severity Distribution (Donut Chart) */}
+        <div className="bg-slate-900/60 backdrop-blur-md border border-white/10 p-6 rounded-2xl shadow-xl">
+          <h3 className="text-xs font-bold uppercase tracking-wider text-slate-400 mb-6">Open Defects By Severity</h3>
           <div className="h-64 w-full">
             <ResponsiveContainer width="100%" height="100%">
               <PieChart>
                 <Pie
-                  data={severityData}
+                  data={metrics?.severity_distribution || []}
                   cx="50%"
                   cy="50%"
                   innerRadius={60}
                   outerRadius={80}
                   paddingAngle={5}
                   dataKey="value"
+                  stroke="none"
                 >
-                  {severityData.map((entry, index) => (
+                  {metrics?.severity_distribution.map((entry: any, index: number) => (
                     <Cell key={`cell-${index}`} fill={entry.color} />
                   ))}
                 </Pie>
                 <Tooltip 
-                  contentStyle={{ borderRadius: '12px', border: 'none', boxShadow: '0 10px 15px -3px rgb(0 0 0 / 0.1)' }}
+                  contentStyle={{ backgroundColor: '#0f172a', borderColor: '#334155', color: '#f8fafc', borderRadius: '8px' }}
+                  itemStyle={{ color: '#f8fafc' }}
                 />
               </PieChart>
             </ResponsiveContainer>
           </div>
-          <div className="flex justify-center space-x-4 mt-4">
-            {severityData.map((item) => (
-              <div key={item.name} className="flex items-center text-xs font-bold text-slate-600">
-                <span className="w-3 h-3 rounded-full mr-2" style={{ backgroundColor: item.color }}></span>
-                {item.name}
+          
+          {/* Custom Legend */}
+          <div className="flex justify-center gap-4 mt-2">
+            {metrics?.severity_distribution.map((item: any, idx: number) => (
+              <div key={idx} className="flex items-center gap-2 text-xs font-medium text-slate-300">
+                <span className="w-3 h-3 rounded-full" style={{ backgroundColor: item.color }}></span>
+                {item.name} ({item.value})
               </div>
             ))}
           </div>
         </div>
 
-        {/* RIGHT CHART: Resolution Time Bar Chart */}
-        <div className="bg-slate-900 rounded-2xl shadow-xl p-8 border border-slate-800">
-          <div className="flex justify-between items-center mb-6">
-            <h3 className="text-sm font-bold text-slate-400 uppercase tracking-wider">Avg Resolution Time (Hours)</h3>
-            <span className="bg-emerald-500/10 text-emerald-400 text-xs font-bold px-2 py-1 rounded-full border border-emerald-500/20">
-              ↓ 78% Faster with AI
-            </span>
+        {/* Module 2: Resolution Time (Bar Chart) */}
+        <div className="bg-slate-900/60 backdrop-blur-md border border-white/10 p-6 rounded-2xl shadow-xl relative overflow-hidden">
+          <div className="absolute top-6 right-6 bg-emerald-500/10 border border-emerald-500/20 text-emerald-400 text-xs font-bold px-3 py-1 rounded-full">
+            ↓ 78% Faster with AI
           </div>
-          <div className="h-64 w-full">
+          <h3 className="text-xs font-bold uppercase tracking-wider text-slate-400 mb-6">Avg Resolution Time (Hours)</h3>
+          
+          <div className="h-64 w-full mt-4">
             <ResponsiveContainer width="100%" height="100%">
-              <BarChart data={resolutionData}>
-                <CartesianGrid strokeDasharray="3 3" stroke="#334155" vertical={false} />
-                <XAxis dataKey="name" stroke="#94a3b8" fontSize={12} tickLine={false} axisLine={false} />
-                <YAxis stroke="#94a3b8" fontSize={12} tickLine={false} axisLine={false} />
+              <BarChart data={metrics?.resolution_trend || []}>
+                <XAxis dataKey="day" stroke="#475569" fontSize={12} tickLine={false} axisLine={false} />
+                <YAxis stroke="#475569" fontSize={12} tickLine={false} axisLine={false} />
                 <Tooltip 
                   cursor={{ fill: '#1e293b' }}
-                  contentStyle={{ backgroundColor: '#0f172a', borderRadius: '12px', border: '1px solid #1e293b', color: '#fff' }}
+                  contentStyle={{ backgroundColor: '#0f172a', borderColor: '#334155', color: '#f8fafc', borderRadius: '8px' }}
                 />
                 <Bar dataKey="time" fill="#3b82f6" radius={[4, 4, 0, 0]} />
               </BarChart>

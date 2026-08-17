@@ -48,73 +48,97 @@ export default function BugSubmissionForm() {
   };
 
   return (
-    <div className="w-full max-w-5xl mx-auto bg-white rounded-2xl border border-gray-100 shadow-xl shadow-gray-100/50 p-6 sm:p-8">
-      <div className="border-b border-gray-100 pb-5 mb-6 flex justify-between items-end">
+    <div className="w-full max-w-6xl mx-auto bg-slate-900/60 backdrop-blur-md border border-white/10 rounded-2xl shadow-2xl p-6 sm:p-8">
+      <div className="border-b border-white/10 pb-5 mb-6 flex flex-col sm:flex-row justify-between items-start sm:items-end gap-4">
         <div>
-          <h2 className="text-xl font-bold text-gray-900 tracking-tight">Defect Ingestion Console</h2>
-          <p className="text-sm text-gray-500 mt-1">Submit issues to be vectorized and saved to the database.</p>
+          <h2 className="text-2xl font-bold text-white tracking-tight">Defect Ingestion Console</h2>
+          <p className="text-sm text-slate-400 mt-1">Submit issues to be vectorized and saved to the database.</p>
         </div>
-        <span className={`text-xs px-3 py-1 rounded-full font-bold ${
-          processStatus === 'completed' ? 'bg-green-100 text-green-700' : 
-          processStatus === 'failed' ? 'bg-red-100 text-red-700' : 
-          'bg-gray-100 text-gray-500'
+        <span className={`text-xs px-3 py-1.5 rounded-full font-bold tracking-wide border ${
+          processStatus === 'completed' ? 'bg-emerald-500/20 text-emerald-400 border-emerald-500/30 shadow-[0_0_10px_rgba(52,211,153,0.2)]' : 
+          processStatus === 'failed' ? 'bg-rose-500/20 text-rose-400 border-rose-500/30' : 
+          'bg-slate-800/80 text-slate-400 border-slate-700'
         }`}>
-          {processStatus === 'completed' ? 'SAVED TO DB' : processStatus === 'failed' ? 'ERROR' : 'AWAITING INPUT'}
+          {processStatus === 'completed' ? '✓ SAVED TO VECTOR DB' : processStatus === 'failed' ? '⚠ INGESTION ERROR' : 'AWAITING INPUT'}
         </span>
       </div>
 
       <form onSubmit={handleSubmit} className="space-y-6">
         <div>
-          <label className="block text-xs font-bold uppercase tracking-wider text-gray-700 mb-2">Issue Headline</label>
+          <label className="block text-xs font-bold uppercase tracking-wider text-slate-300 mb-2">Issue Headline</label>
           <input
             type="text"
             required
             value={title}
             onChange={(e) => setTitle(e.target.value)}
             disabled={processStatus !== 'idle' && processStatus !== 'completed' && processStatus !== 'failed'}
-            className="w-full px-4 py-3 bg-gray-50 border border-gray-200 rounded-xl outline-none text-gray-900 focus:bg-white focus:ring-2 focus:ring-indigo-500"
+            className="w-full px-4 py-3 bg-slate-950/50 border border-slate-700/80 rounded-xl outline-none text-white focus:bg-slate-900/80 focus:ring-2 focus:ring-indigo-500 transition-all disabled:opacity-50"
+            placeholder="e.g., Payment API 500 Error"
           />
         </div>
 
-        <div className="grid grid-cols-2 gap-4">
+        <div className="grid grid-cols-1 sm:grid-cols-2 gap-4 text-white">
           <div>
-            <label className="block text-xs font-bold uppercase tracking-wider text-gray-700 mb-2">Environment</label>
-            <select value={environment} onChange={(e) => setEnvironment(e.target.value)} className="w-full px-4 py-3 bg-gray-50 border rounded-xl outline-none focus:ring-2 focus:ring-indigo-500">
-              <option>Production</option><option>Staging</option><option>Local Dev</option>
+            <label className="block text-xs font-bold uppercase tracking-wider text-slate-300 mb-2">Environment</label>
+            <select 
+              value={environment} 
+              onChange={(e) => setEnvironment(e.target.value)} 
+              className="w-full px-4 py-3 bg-slate-950/50 border border-slate-700/80 rounded-xl outline-none focus:ring-2 focus:ring-indigo-500 appearance-none text-white transition-all"
+            >
+              <option className="bg-slate-900 text-white">Production</option>
+              <option className="bg-slate-900 text-white">Staging</option>
+              <option className="bg-slate-900 text-white">Local Dev</option>
             </select>
           </div>
           <div>
-            <label className="block text-xs font-bold uppercase tracking-wider text-gray-700 mb-2">Severity</label>
-            <select value={severity} onChange={(e) => setSeverity(e.target.value)} className="w-full px-4 py-3 bg-gray-50 border rounded-xl outline-none focus:ring-2 focus:ring-indigo-500">
-              <option>Low</option><option>Medium</option><option>High</option><option>Critical</option>
+            <label className="block text-xs font-bold uppercase tracking-wider text-slate-300 mb-2">Severity</label>
+            <select 
+              value={severity} 
+              onChange={(e) => setSeverity(e.target.value)} 
+              className="w-full px-4 py-3 bg-slate-950/50 border border-slate-700/80 rounded-xl outline-none focus:ring-2 focus:ring-indigo-500 appearance-none text-white transition-all"
+            >
+              <option className="bg-slate-900 text-white">Low</option>
+              <option className="bg-slate-900 text-white">Medium</option>
+              <option className="bg-slate-900 text-white">High</option>
+              <option className="bg-slate-900 text-white">Critical</option>
             </select>
           </div>
         </div>
 
         <div>
-          <label className="block text-xs font-bold uppercase tracking-wider text-gray-700 mb-2">Telemetry Data & Logs</label>
+          <label className="block text-xs font-bold uppercase tracking-wider text-slate-300 mb-2">Telemetry Data & Logs</label>
           <textarea
             required
             value={description}
             onChange={(e) => setDescription(e.target.value)}
             rows={4}
-            className="w-full px-4 py-3 bg-gray-900 border border-gray-800 rounded-xl outline-none text-green-400 font-mono text-sm focus:ring-2 focus:ring-indigo-500"
+            placeholder="Paste raw server logs or error traces here..."
+            className="w-full px-4 py-3 bg-slate-950/80 border border-slate-700/80 rounded-xl outline-none text-emerald-400 font-mono text-sm focus:ring-2 focus:ring-indigo-500 transition-all placeholder:text-slate-600 disabled:opacity-50"
           />
         </div>
 
         {processStatus === 'failed' && (
-          <div className="p-4 bg-red-50 border border-red-200 rounded-xl">
-            <h4 className="text-sm font-bold text-red-800 mb-1">Database/Backend Error:</h4>
-            <p className="text-sm text-red-600 font-mono">{errorMessage}</p>
+          <div className="p-4 bg-rose-500/10 border border-rose-500/30 rounded-xl">
+            <h4 className="text-sm font-bold text-rose-400 mb-1 flex items-center gap-2">
+              <span className="text-lg">⚠</span> Database/Backend Error:
+            </h4>
+            <p className="text-sm text-rose-300/80 font-mono pl-7">{errorMessage}</p>
           </div>
         )}
 
         <button
           type="submit"
           disabled={processStatus !== 'idle' && processStatus !== 'failed'}
-          className="w-full bg-indigo-600 text-white font-semibold py-3.5 rounded-xl hover:bg-indigo-700 transition disabled:opacity-50"
+          className="w-full bg-indigo-600 hover:bg-indigo-500 text-white font-bold py-3.5 rounded-xl transition-all disabled:opacity-50 shadow-lg shadow-indigo-500/25 flex justify-center items-center gap-2"
         >
-          {processStatus === 'idle' || processStatus === 'failed' ? 'Vectorize & Save Bug' : 'Processing AI Pipeline...'}
+          {processStatus === 'idle' || processStatus === 'failed' ? (
+            'Vectorize & Save Bug'
+          ) : (
+            <>
+              <span className="w-4 h-4 rounded-full border-2 border-white/20 border-t-white animate-spin"></span>
+              Processing AI Pipeline...
+            </>
+          )}
         </button>
       </form>
     </div>
