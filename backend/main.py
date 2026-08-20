@@ -500,4 +500,57 @@ async def run_root_cause_agent(
     You are an Expert Diagnostic SRE.
 
     Analyze the current issue and historical context
-    to determine the
+    to determine the root cause.
+
+    Current Issue:
+    {query}
+
+    Historical Context:
+    {context_text}
+
+    Output a raw JSON object with exactly these keys:
+    - hypothesis
+    - confidence_score
+    - evidence
+
+    Do not use markdown or code blocks.
+    """
+
+    try:
+        print("\nSending request to AI...")
+
+        response = await asyncio.to_thread(
+            llm_client.chat.completions.create,
+            model=MODEL_NAME,
+            messages=[
+                {
+                    "role": "user",
+                    "content": prompt
+                }
+            ],
+            temperature=0.2
+        )
+
+        raw_text = response.choices[0].message.content
+
+        print("\nRAW AI RESPONSE:")
+        print(raw_text)
+        print("===================\n")
+
+        clean_text = (
+            raw_text
+            .replace("```json", "")
+            .replace("```", "")
+            .strip()
+        )
+
+        return json.loads(clean_text)
+
+    except Exception as e:
+        print(f"\nROOT CAUSE CRASHED: {str(e)}\n")
+
+        return {
+            "hypothesis": "Agent failed to generate root cause.",
+            "confidence_score": 0.0,
+            "evidence": []
+        }
