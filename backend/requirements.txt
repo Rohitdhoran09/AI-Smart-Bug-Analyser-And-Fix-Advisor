@@ -4,4 +4,4 @@ python-dotenv
 requests
 supabase
 groq
-sentence-transformers
+openai
