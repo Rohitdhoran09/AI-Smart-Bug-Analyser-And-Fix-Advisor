@@ -29,4 +29,4 @@ Create a `.env` file in your backend directory with the following keys:
 ```env
 SUPABASE_URL=https://qrlilnobonprqcliewin.supabase.co
 SUPABASE_KEY=eyJhbGciOiJIUzI1NiIsInR5cCI6IkpXVCJ9.eyJpc3MiOiJzdXBhYmFzZSIsInJlZiI6InFybGlsbm9ib25wcnFjbGlld2luIiwicm9sZSI6ImFub24iLCJpYXQiOjE3ODMwODkxMzgsImV4cCI6MjA5ODY2NTEzOH0.epq3zsxvqtbFHAuvuiopwb9bD9qeY7-6BZusfbhKEgQ
-LLM_API_KEY=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
+LLM_API_KEY=gsk_FwTAVIYCVjHA5Wf6pUh5WGdyb3FYrG7FV1HXTMzMTfvq1xHaMF
