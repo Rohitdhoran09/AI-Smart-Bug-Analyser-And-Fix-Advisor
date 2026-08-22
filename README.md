@@ -1,4 +1,4 @@
-# AI-Smart-Bug-Analyser-And-Fix-Advisor
+# Creation of Intelligent Bug Diagnosis Platform with Fix Recommendation 
 # 🐛 AI-Powered Bug Analyzer & Resolution Engine
 
 An intelligent, multi-agent site reliability engineering (SRE) platform that automates bug triage, performs semantic duplicate detection, and generates actionable root cause analyses using Retrieval-Augmented Generation (RAG).
